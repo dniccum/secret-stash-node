@@ -1,0 +1,11 @@
+{
+  "name": "secret-stash-node",
+  "version": "0.1.0",
+  "description": "A Node.js package for interacting with the SecretStash REST API.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Doug Niccum <doug@dniccumdesign.com>",
+  "license": "MIT"
+}
