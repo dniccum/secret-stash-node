@@ -56,7 +56,10 @@ export class VariableUtility {
 
   static mergeEnvContent(content: string, variables: Record<string, string>): string {
     const lineEnding = content.includes("\r\n") ? "\r\n" : "\n";
-    const lines = content === "" ? [] : content.split(/\r\n|\n|\r/);
+    const rawLines = content === "" ? [] : content.split(/\r\n|\n|\r/);
+    const lines = rawLines.length > 0 && rawLines[rawLines.length - 1] === ""
+      ? rawLines.slice(0, -1)
+      : rawLines;
     const used: Record<string, boolean> = {};
 
     for (let index = 0; index < lines.length; index++) {

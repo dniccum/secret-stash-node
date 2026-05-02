@@ -158,6 +158,13 @@ describe("VariableUtility", () => {
       expect(result).toContain("DB_PORT=5432");
     });
 
+    it("should not insert spurious blank line when appending to content ending with newline", () => {
+      const content = "EXISTING=keep\n";
+      const variables = { "NEW_VAR": "value" };
+      const result = VariableUtility.mergeEnvContent(content, variables);
+      expect(result).toBe("EXISTING=keep\nNEW_VAR=value\n");
+    });
+
     it("should handle empty content", () => {
       const variables = { "DB_HOST": "localhost", "DB_PORT": "3306" };
       const result = VariableUtility.mergeEnvContent("", variables);
