@@ -17,7 +17,9 @@ export class SecretStashClient {
       ? apiUrl.replace(/\/+$/, "")
       : (ConfigResolver.get("api_url") as string) ?? "";
 
-    this.apiToken = apiToken ?? (ConfigResolver.get("api_token") as string) ?? "";
+    this.apiToken = apiToken
+      ? apiToken
+      : (ConfigResolver.get("api_token") as string) ?? "";
 
     if (!this.apiUrl) {
       throw new InvalidEnvironmentConfiguration(

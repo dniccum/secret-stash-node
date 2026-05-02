@@ -114,6 +114,17 @@ describe("VariablesManager", () => {
 
       await expect(variablesManager.list(client, "app-123", "production")).rejects.toThrow(NoEnvironmentsFound);
     });
+
+    it("should throw when no envelope exists for device (not create new DEK)", async () => {
+      const client = {
+        getEnvironments: jest.fn().mockResolvedValue({
+          data: [{ id: 1, name: "Production", slug: "production", type: "production", created_at: "2025-01-01" }],
+        }),
+        getEnvironmentEnvelope: jest.fn().mockResolvedValue({ data: { envelope: null } }),
+      } as unknown as SecretStashClient;
+
+      await expect(variablesManager.list(client, "app-123", "production")).rejects.toThrow("No envelope found for this device");
+    });
   });
 
   describe("pull", () => {

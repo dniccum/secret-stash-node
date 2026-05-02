@@ -58,6 +58,13 @@ describe("SecretStashClient", () => {
       expect(() => new SecretStashClient("https://api.test.com")).toThrow(InvalidEnvironmentConfiguration);
     });
 
+    it("should fall back to ConfigResolver for empty string apiToken", () => {
+      process.env["SECRET_STASH_API_TOKEN"] = "env-token";
+      // Empty string falls back to ConfigResolver, same as apiUrl behavior
+      const client = new SecretStashClient("https://api.test.com", "");
+      expect(client).toBeDefined();
+    });
+
     it("should create client with explicit parameters", () => {
       const client = new SecretStashClient("https://api.test.com", "test-token");
       expect(client).toBeDefined();

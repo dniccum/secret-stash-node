@@ -39,7 +39,7 @@ export class VariablesManager {
   async list(client: SecretStashClient, applicationId: string, environmentSlug: string): Promise<ListVariablesResult> {
     await this.fetchAndValidateEnvironments(client, applicationId, environmentSlug);
 
-    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client);
+    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client, false);
     const variables = await this.getVariablesForEnvironment(client, applicationId, environmentSlug);
 
     const rows = variables.map((variable) => {
@@ -71,7 +71,7 @@ export class VariablesManager {
   async pull(client: SecretStashClient, applicationId: string, environmentSlug: string, filePath = ".env"): Promise<PullVariablesResult> {
     await this.fetchAndValidateEnvironments(client, applicationId, environmentSlug);
 
-    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client);
+    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client, false);
     const variables = await this.getVariablesForEnvironment(client, applicationId, environmentSlug);
 
     const decryptedVariables: Record<string, string> = {};
@@ -137,7 +137,7 @@ export class VariablesManager {
       await client.createEnvironment(applicationId, name, slug, "local");
     }
 
-    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client);
+    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client, true);
 
     let created = 0;
     let failed = 0;
@@ -196,7 +196,7 @@ export class VariablesManager {
     }));
   }
 
-  private async getEnvironmentKey(applicationId: string, environmentSlug: string, client: SecretStashClient): Promise<Buffer> {
+  private async getEnvironmentKey(applicationId: string, environmentSlug: string, client: SecretStashClient, createIfMissing: boolean): Promise<Buffer> {
     const deviceKeyId = this.keyManager.getDeviceKeyId();
 
     const response = await client.getEnvironmentEnvelope(applicationId, environmentSlug, deviceKeyId);
@@ -210,6 +210,10 @@ export class VariablesManager {
       } catch {
         throw new Error("Unable to decrypt environment key. Verify your device key or run envelope repair if needed.");
       }
+    }
+
+    if (!createIfMissing) {
+      throw new Error("No envelope found for this device. Ask another team member to grant access, or run envelope repair.");
     }
 
     const dek = CryptoHelper.generateKey();
