@@ -43,7 +43,7 @@ export class VariableUtility {
         continue;
       }
 
-      const match = line.match(/^\s*(?:export\s+)?([^=\s]+)\s*=\s*(.*)\s*$/);
+      const match = line.match(/^\s*(?:export\s+)?([^=\s]+)\s*=\s*(.*?)\s*$/);
       if (!match) {
         continue;
       }
@@ -82,7 +82,7 @@ export class VariableUtility {
     }
 
     let merged = lines.join(lineEnding);
-    if (content !== "" && content.endsWith(lineEnding)) {
+    if (content !== "" && content.endsWith(lineEnding) && !merged.endsWith(lineEnding)) {
       merged += lineEnding;
     }
 

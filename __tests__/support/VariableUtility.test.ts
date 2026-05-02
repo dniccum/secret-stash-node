@@ -130,6 +130,15 @@ describe("VariableUtility", () => {
         "APP_KEY": "'secret'",
       });
     });
+
+    it("should strip trailing whitespace from values", () => {
+      const content = "DB_HOST=localhost   \nAPI_TOKEN=mytoken\t  ";
+      const result = VariableUtility.parseEnvContent(content);
+      expect(result).toEqual({
+        "DB_HOST": "localhost",
+        "API_TOKEN": "mytoken",
+      });
+    });
   });
 
   describe("mergeEnvContent", () => {
@@ -178,6 +187,16 @@ describe("VariableUtility", () => {
       const variables = { "DB_HOST": "new-host" };
       const result = VariableUtility.mergeEnvContent(content, variables);
       expect(result).toContain("DB_HOST=new-host");
+    });
+
+    it("should not accumulate trailing newlines on repeated merges", () => {
+      let content = "DB_HOST=localhost\n";
+      content = VariableUtility.mergeEnvContent(content, { "DB_HOST": "first" });
+      content = VariableUtility.mergeEnvContent(content, { "DB_HOST": "second" });
+      content = VariableUtility.mergeEnvContent(content, { "DB_HOST": "third" });
+      const trailingNewlines = content.match(/\n+$/);
+      expect(trailingNewlines).not.toBeNull();
+      expect(trailingNewlines![0]).toBe("\n");
     });
   });
 });
