@@ -137,7 +137,7 @@ export class VariablesManager {
       await client.createEnvironment(applicationId, name, slug, "local");
     }
 
-    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client, true);
+    const key = await this.getEnvironmentKey(applicationId, environmentSlug, client, !environmentExists);
 
     let created = 0;
     let failed = 0;
