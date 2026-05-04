@@ -30,7 +30,7 @@ export class ConfigResolver {
 
     if (envKey) {
       const dotenv = ConfigResolver.loadDotenv();
-      if (dotenv[envKey] !== undefined) {
+      if (dotenv[envKey] !== undefined && dotenv[envKey] !== "") {
         return dotenv[envKey];
       }
     }

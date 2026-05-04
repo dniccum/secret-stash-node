@@ -3,6 +3,7 @@ import * as os from "os";
 import { SecretStashClient } from "../client/SecretStashClient";
 import { KeyManager } from "./KeyManager";
 import { CryptoHelper } from "../crypto/CryptoHelper";
+import { InvalidApiToken, MissingApiToken } from "../errors";
 import { DeviceKeyData, EnvelopePayload } from "../types";
 
 export interface RewrapOptions {
@@ -56,7 +57,13 @@ export class EnvelopeManager {
   async repair(client: SecretStashClient, options: RewrapOptions): Promise<void> {
     try {
       await this.rewrap(client, options);
-    } catch {
+    } catch (e) {
+      if (e instanceof InvalidApiToken || e instanceof MissingApiToken) {
+        throw e;
+      }
+      if (e instanceof TypeError && (e as Error).message?.includes("fetch")) {
+        throw e;
+      }
       await this.reset(client, options.applicationId, options.environmentSlug);
     }
   }
