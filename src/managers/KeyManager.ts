@@ -118,8 +118,6 @@ export class KeyManager {
 
     const keyPair = CryptoHelper.generateRSAKeyPair();
 
-    this.savePrivateKey(keyPair.privateKey);
-
     const metadata: Record<string, unknown> = {
       label,
       hostname: os.hostname() || null,
@@ -132,6 +130,8 @@ export class KeyManager {
     if (!deviceKey?.id) {
       throw new PrivateKeyFailedToSave("Failed to register device key.");
     }
+
+    this.savePrivateKey(keyPair.privateKey);
 
     this.saveDeviceMetadata({
       device_key_id: deviceKey.id,
