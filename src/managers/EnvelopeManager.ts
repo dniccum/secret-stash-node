@@ -26,6 +26,35 @@ export class EnvelopeManager {
   }
 
   async rewrap(client: SecretStashClient, options: RewrapOptions): Promise<void> {
+    const dek = await this.recoverDek(client, options);
+    await this.storeRewrappedEnvelope(client, options, dek);
+  }
+
+  async repair(client: SecretStashClient, options: RewrapOptions): Promise<void> {
+    let dek: Buffer;
+    try {
+      dek = await this.recoverDek(client, options);
+    } catch (e) {
+      // Recovery failed — we never obtained the old DEK, so falling back to
+      // reset is safe (no DEK is being discarded). Still re-throw auth and
+      // network errors since those are likely transient and reset would not help.
+      if (e instanceof InvalidApiToken || e instanceof MissingApiToken) {
+        throw e;
+      }
+      if (e instanceof TypeError && (e as Error).message?.includes("fetch")) {
+        throw e;
+      }
+      await this.reset(client, options.applicationId, options.environmentSlug);
+      return;
+    }
+
+    // DEK was recovered successfully. Never fall back to reset() here — that
+    // would generate a brand-new DEK and silently discard the one we just
+    // recovered, making existing ciphertexts unreadable. Let the caller retry.
+    await this.storeRewrappedEnvelope(client, options, dek);
+  }
+
+  private async recoverDek(client: SecretStashClient, options: RewrapOptions): Promise<Buffer> {
     const response = await client.getEnvironmentEnvelope(
       options.applicationId,
       options.environmentSlug,
@@ -40,8 +69,10 @@ export class EnvelopeManager {
     }
 
     const oldPrivateKey = this.resolveOldPrivateKey(options);
-    const dek = CryptoHelper.openEnvelope(envelope, oldPrivateKey);
+    return CryptoHelper.openEnvelope(envelope, oldPrivateKey);
+  }
 
+  private async storeRewrappedEnvelope(client: SecretStashClient, options: RewrapOptions, dek: Buffer): Promise<void> {
     const currentDeviceKeyId = this.keyManager.getDeviceKeyId();
     const publicKey = this.keyManager.getDevicePublicKey();
 
@@ -52,20 +83,6 @@ export class EnvelopeManager {
       currentDeviceKeyId,
       newEnvelope
     );
-  }
-
-  async repair(client: SecretStashClient, options: RewrapOptions): Promise<void> {
-    try {
-      await this.rewrap(client, options);
-    } catch (e) {
-      if (e instanceof InvalidApiToken || e instanceof MissingApiToken) {
-        throw e;
-      }
-      if (e instanceof TypeError && (e as Error).message?.includes("fetch")) {
-        throw e;
-      }
-      await this.reset(client, options.applicationId, options.environmentSlug);
-    }
   }
 
   async reset(client: SecretStashClient, applicationId: string, environmentSlug: string): Promise<ResetResult> {
