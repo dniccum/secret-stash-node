@@ -114,20 +114,18 @@ export class EnvelopeManager {
     if (options.oldPrivateKeyPath) {
       const expandedPath = this.expandHomePath(options.oldPrivateKeyPath);
       if (!fs.existsSync(expandedPath)) {
-        throw new Error("Old private key file not found.");
+        throw new Error(`Old private key file not found at ${expandedPath}.`);
       }
       return fs.readFileSync(expandedPath, "utf-8");
     }
 
-    const defaultPath = this.defaultPrivateKeyPath();
-    if (!fs.existsSync(defaultPath)) {
-      throw new Error("Old private key file not found.");
-    }
-    return fs.readFileSync(defaultPath, "utf-8");
-  }
-
-  private defaultPrivateKeyPath(): string {
-    return `${os.homedir()}/.secret-stash/device_private_key.pem`;
+    // Intentionally no fallback to the current device key path:
+    // after `key init --force`, that file holds the *new* key, not the old
+    // one needed to unwrap the previous envelope. Silently using it would
+    // surface as a confusing OAEP decryption error.
+    throw new Error(
+      "An old private key must be provided via `oldPrivateKey` or `oldPrivateKeyPath` to rewrap an envelope."
+    );
   }
 
   private expandHomePath(filePath: string): string {
