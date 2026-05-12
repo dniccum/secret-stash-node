@@ -15,5 +15,8 @@ export type { ListEnvironmentsResult, CreateEnvironmentResult } from "./managers
 export { EnvelopeManager } from "./managers/EnvelopeManager";
 export type { RewrapOptions, ResetResult } from "./managers/EnvelopeManager";
 
+export { ApplicationsManager } from "./managers/ApplicationsManager";
+export type { ListApplicationsResult } from "./managers/ApplicationsManager";
+
 export * from "./types";
 export * from "./errors";
