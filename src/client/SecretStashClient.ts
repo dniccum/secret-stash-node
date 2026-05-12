@@ -170,7 +170,7 @@ export class SecretStashClient {
   }
 
   async getVariables(applicationId: string, environmentSlug: string): Promise<Record<string, unknown>> {
-    return this.get(`applications/${applicationId}/environments/${environmentSlug}`);
+    return this.get(`applications/${applicationId}/environments/${environmentSlug}/variables`);
   }
 
   async createVariable(applicationId: string, environmentId: string, name: string, payload: Record<string, unknown>): Promise<Record<string, unknown>> {
