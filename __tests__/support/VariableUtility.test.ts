@@ -122,13 +122,21 @@ describe("VariableUtility", () => {
       });
     });
 
-    it("should handle quoted values", () => {
+    it("should strip surrounding matched quotes from values", () => {
       const content = "APP_NAME=\"My App\"\nAPP_KEY='secret'";
       const result = VariableUtility.parseEnvContent(content);
       expect(result).toEqual({
-        "APP_NAME": "\"My App\"",
-        "APP_KEY": "'secret'",
+        "APP_NAME": "My App",
+        "APP_KEY": "secret",
       });
+    });
+
+    it("should preserve mismatched or single quote characters", () => {
+      const content = "MIXED=\"unclosed\nINNER=he said \"hi\"\nBARE=\"";
+      const result = VariableUtility.parseEnvContent(content);
+      expect(result["MIXED"]).toBe("\"unclosed");
+      expect(result["INNER"]).toBe("he said \"hi\"");
+      expect(result["BARE"]).toBe("\"");
     });
 
     it("should strip trailing whitespace from values", () => {

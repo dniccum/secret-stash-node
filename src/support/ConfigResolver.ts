@@ -65,19 +65,7 @@ export class ConfigResolver {
     }
 
     const content = fs.readFileSync(envPath, "utf-8");
-    const parsed = VariableUtility.parseEnvContent(content);
-
-    dotenvCache = Object.fromEntries(
-      Object.entries(parsed).map(([key, value]) => {
-        if (
-          (value.startsWith("\"") && value.endsWith("\"")) ||
-          (value.startsWith("'") && value.endsWith("'"))
-        ) {
-          return [key, value.slice(1, -1)];
-        }
-        return [key, value];
-      })
-    );
+    dotenvCache = VariableUtility.parseEnvContent(content);
 
     return dotenvCache;
   }

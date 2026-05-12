@@ -48,10 +48,22 @@ export class VariableUtility {
         continue;
       }
 
-      variables[match[1]] = match[2];
+      variables[match[1]] = VariableUtility.stripSurroundingQuotes(match[2]);
     }
 
     return variables;
+  }
+
+  private static stripSurroundingQuotes(value: string): string {
+    if (value.length < 2) {
+      return value;
+    }
+    const first = value[0];
+    const last = value[value.length - 1];
+    if ((first === "\"" && last === "\"") || (first === "'" && last === "'")) {
+      return value.slice(1, -1);
+    }
+    return value;
   }
 
   static mergeEnvContent(content: string, variables: Record<string, string>): string {
