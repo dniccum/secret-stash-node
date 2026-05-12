@@ -4,6 +4,9 @@
   "description": "A Node.js package for interacting with the SecretStash REST API.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "secret-stash": "dist/cli.js"
+  },
   "files": [
     "dist"
   ],
@@ -32,5 +35,8 @@
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
   }
 }
