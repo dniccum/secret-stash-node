@@ -159,6 +159,7 @@ variables
   .command("list")
   .description("List variables (masked)")
   .requiredOption("-e, --environment <slug>", "Environment slug")
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -185,6 +186,7 @@ variables
   .description("Pull variables into a local .env file")
   .requiredOption("-e, --environment <slug>", "Environment slug")
   .option("-f, --file <path>", "Path to .env file", ".env")
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -203,6 +205,7 @@ variables
   .description("Push local .env variables to SecretStash")
   .requiredOption("-e, --environment <slug>", "Environment slug")
   .option("-f, --file <path>", "Path to .env file", ".env")
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -225,6 +228,7 @@ const environments = program.command("environments").description("Manage environ
 environments
   .command("list")
   .description("List environments for an application")
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (_opts, cmd) => {
     try {
       const client = createClient();
@@ -252,6 +256,7 @@ environments
   .requiredOption("-n, --name <name>", "Environment name")
   .requiredOption("-s, --slug <slug>", "Environment slug")
   .requiredOption("-t, --type <type>", "Environment type (e.g. development, staging, production)")
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -277,6 +282,7 @@ envelope
   .requiredOption("-e, --environment <slug>", "Environment slug")
   .requiredOption("--old-key-path <path>", "Path to the old private key file")
   .requiredOption("--old-device-key-id <id>", "Old device key ID", parseIntStrict)
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -299,6 +305,7 @@ envelope
   .command("reset")
   .description("Reset the environment key (creates new DEK for all device keys)")
   .requiredOption("-e, --environment <slug>", "Environment slug")
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -318,6 +325,7 @@ envelope
   .requiredOption("-e, --environment <slug>", "Environment slug")
   .requiredOption("--old-key-path <path>", "Path to the old private key file")
   .requiredOption("--old-device-key-id <id>", "Old device key ID", parseIntStrict)
+  .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)")
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
