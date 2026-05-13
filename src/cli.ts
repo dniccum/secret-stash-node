@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { SecretStashClient } from "./client/SecretStashClient";
 import { ConfigResolver } from "./support/ConfigResolver";
 import { KeyManager } from "./managers/KeyManager";
@@ -41,6 +41,14 @@ function handleError(error: unknown): never {
   process.exit(1);
 }
 
+function parseIntStrict(value: string): number {
+  const n = parseInt(value, 10);
+  if (isNaN(n)) {
+    throw new InvalidArgumentError(`Expected a number, got: ${value}`);
+  }
+  return n;
+}
+
 // ---------------------------------------------------------------------------
 // key
 // ---------------------------------------------------------------------------
@@ -53,7 +61,7 @@ key
   .option("-l, --label <label>", "Label for the device key")
   .option("-f, --force", "Force regeneration of existing keys")
   .option("-t, --temporary", "Create a temporary key for CI/CD")
-  .option("--ttl <minutes>", "TTL in minutes for temporary keys", parseInt)
+  .option("--ttl <minutes>", "TTL in minutes for temporary keys", parseIntStrict)
   .action(async (opts) => {
     try {
       const client = createClient();
@@ -268,7 +276,7 @@ envelope
   .description("Rewrap an envelope from an old key to the current device key")
   .requiredOption("-e, --environment <slug>", "Environment slug")
   .requiredOption("--old-key-path <path>", "Path to the old private key file")
-  .requiredOption("--old-device-key-id <id>", "Old device key ID", parseInt)
+  .requiredOption("--old-device-key-id <id>", "Old device key ID", parseIntStrict)
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
@@ -309,7 +317,7 @@ envelope
   .description("Attempt rewrap, fall back to reset")
   .requiredOption("-e, --environment <slug>", "Environment slug")
   .requiredOption("--old-key-path <path>", "Path to the old private key file")
-  .requiredOption("--old-device-key-id <id>", "Old device key ID", parseInt)
+  .requiredOption("--old-device-key-id <id>", "Old device key ID", parseIntStrict)
   .action(async (opts, cmd) => {
     try {
       const client = createClient();
