@@ -2,6 +2,13 @@
 
 # SecretStash Node Package
 
+[![npm version](https://img.shields.io/npm/v/@secret-stash/cli)](https://www.npmjs.com/package/@secret-stash/cli)
+[![npm downloads](https://img.shields.io/npm/dm/@secret-stash/cli)](https://www.npmjs.com/package/@secret-stash/cli)
+[![CI](https://github.com/dniccum/secret-stash-node/actions/workflows/ci.yml/badge.svg)](https://github.com/dniccum/secret-stash-node/actions/workflows/ci.yml)
+[![Security](https://github.com/dniccum/secret-stash-node/actions/workflows/security.yml/badge.svg)](https://github.com/dniccum/secret-stash-node/actions/workflows/security.yml)
+[![Publish to npm](https://github.com/dniccum/secret-stash-node/actions/workflows/publish.yml/badge.svg)](https://github.com/dniccum/secret-stash-node/actions/workflows/publish.yml)
+[![License: MIT](https://img.shields.io/npm/l/@secret-stash/cli)](LICENSE.md)
+
 A Node.js/TypeScript package for interacting with the [SecretStash](https://secretstash.cloud) REST API. This package can be used as a programmatic Node module within a project or installed globally as a CLI tool. It provides full zero-knowledge encryption support for managing your environment variables.
 
 ## Requirements
