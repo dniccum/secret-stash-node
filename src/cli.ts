@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import * as path from "path";
 import { Command, InvalidArgumentError } from "commander";
 import { SecretStashClient } from "./client/SecretStashClient";
 import { ConfigResolver } from "./support/ConfigResolver";
@@ -9,12 +10,15 @@ import { EnvironmentsManager } from "./managers/EnvironmentsManager";
 import { EnvelopeManager } from "./managers/EnvelopeManager";
 import { ApplicationsManager } from "./managers/ApplicationsManager";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pkg = require(path.join(__dirname, "..", "package.json")) as { version: string };
+
 const program = new Command();
 
 program
   .name("secret-stash")
   .description("CLI for interacting with the SecretStash REST API")
-  .version("0.1.0")
+  .version(pkg.version)
   .option("-a, --application <id>", "Application ID (overrides SECRET_STASH_APPLICATION_ID)");
 
 // ---------------------------------------------------------------------------
