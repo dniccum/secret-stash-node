@@ -50,15 +50,6 @@ export class MetaKeyFailedToSave extends Error {
   }
 }
 
-export class NoApplicationsAvailable extends Error {
-  public readonly code: number;
-  constructor(message = "No applications were found for the provided organization.", code = 404) {
-    super(message);
-    this.name = "NoApplicationsAvailable";
-    this.code = code;
-  }
-}
-
 export class PrivateKeyFailedToSave extends Error {
   public readonly code: number;
   constructor(message = "Failed to save private key file.", code = 400) {

@@ -1,6 +1,5 @@
 import { ApplicationsManager } from "../../src/managers/ApplicationsManager";
 import { SecretStashClient } from "../../src/client/SecretStashClient";
-import { NoApplicationsAvailable } from "../../src/errors";
 
 function createMockClient(overrides: Record<string, unknown> = {}) {
   return {
@@ -32,14 +31,20 @@ describe("ApplicationsManager", () => {
       expect(result.applications[1].name).toBe("Other App");
     });
 
-    it("should throw NoApplicationsAvailable when none exist", async () => {
+    it("should return an empty result when none exist", async () => {
       const client = createMockClient({ getApplications: { data: [] } });
-      await expect(manager.list(client)).rejects.toThrow(NoApplicationsAvailable);
+      const result = await manager.list(client);
+
+      expect(result.total).toBe(0);
+      expect(result.applications).toEqual([]);
     });
 
-    it("should throw NoApplicationsAvailable when data is missing", async () => {
+    it("should return an empty result when data is missing", async () => {
       const client = createMockClient({ getApplications: {} });
-      await expect(manager.list(client)).rejects.toThrow(NoApplicationsAvailable);
+      const result = await manager.list(client);
+
+      expect(result.total).toBe(0);
+      expect(result.applications).toEqual([]);
     });
   });
 });

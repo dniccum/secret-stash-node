@@ -363,6 +363,11 @@ applications
       const manager = new ApplicationsManager();
       const result = await manager.list(client);
 
+      if (result.total === 0) {
+        console.log("No applications found.");
+        return;
+      }
+
       console.log(`Applications (${result.total}):\n`);
       for (const app of result.applications) {
         console.log(`  ${app.name} (${app.id})`);
