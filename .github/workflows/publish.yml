@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
@@ -23,6 +24,9 @@ jobs:
           node-version: 20.x
           cache: npm
           registry-url: https://registry.npmjs.org
+      
+      - name: Update NPM to latest
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -40,6 +44,7 @@ jobs:
         run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
 
       - name: Publish to npm
-        run: npm publish
+        run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
