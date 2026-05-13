@@ -31,6 +31,12 @@ export interface DeviceKeyData {
   expires_at?: string | null;
 }
 
+export interface ApplicationData {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
 export interface EnvironmentData {
   id: number;
   name: string;
