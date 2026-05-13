@@ -74,7 +74,7 @@ Switch between applications using the `--application` flag:
 secret-stash -a <app-id> variables list -e production
 ```
 
-For the full list of available commands, options, and programmatic usage, visit the [SecretStash Node documentation](https://docs.secretstash.cloud/node-package/commands).
+For the full list of available commands, options, and programmatic usage, visit the [SecretStash Node documentation](https://docs.secretstash.cloud/packages/node-js/installation).
 
 ## Testing
 
