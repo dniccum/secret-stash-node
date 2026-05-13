@@ -1,11 +1,12 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import * as path from "path";
 
 const CLI_PATH = path.resolve(__dirname, "../dist/cli.js");
 
 function runCli(args: string): string {
+  const argv = args.split(/\s+/).filter((a) => a.length > 0);
   try {
-    return execSync(`node ${CLI_PATH} ${args}`, {
+    return execFileSync(process.execPath, [CLI_PATH, ...argv], {
       encoding: "utf-8",
       timeout: 5000,
     });
