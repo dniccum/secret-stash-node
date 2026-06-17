@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { ConfigResolver } from "../support/ConfigResolver";
 import { VariableUtility } from "../support/VariableUtility";
 
@@ -103,7 +103,7 @@ export class LoginManager {
       command = "xdg-open";
     }
 
-    exec(`${command} ${JSON.stringify(url)}`, () => {
+    execFile(command, [url], () => {
       // ignore errors - user can open manually
     });
   }
