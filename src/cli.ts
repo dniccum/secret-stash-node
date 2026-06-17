@@ -5,6 +5,7 @@ import { Command, InvalidArgumentError } from "commander";
 import { SecretStashClient } from "./client/SecretStashClient";
 import { ConfigResolver } from "./support/ConfigResolver";
 import { KeyManager } from "./managers/KeyManager";
+import { LoginManager } from "./managers/LoginManager";
 import { VariablesManager } from "./managers/VariablesManager";
 import { EnvironmentsManager } from "./managers/EnvironmentsManager";
 import { EnvelopeManager } from "./managers/EnvelopeManager";
@@ -372,6 +373,39 @@ applications
       for (const app of result.applications) {
         console.log(`  ${app.name} (${app.id})`);
       }
+    } catch (e) {
+      handleError(e);
+    }
+  });
+
+// ---------------------------------------------------------------------------
+// login
+// ---------------------------------------------------------------------------
+
+program
+  .command("login")
+  .description("Authenticate with SecretStash and store an API token locally")
+  .option("--no-browser", "Do not attempt to open the browser automatically")
+  .action(async (opts) => {
+    try {
+      const loginManager = new LoginManager();
+
+      if (loginManager.hasExistingToken()) {
+        const readline = await import("readline");
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise<string>((resolve) => {
+          rl.question("An API token is already configured. Generate a new one? (y/N) ", resolve);
+        });
+        rl.close();
+
+        if (answer.toLowerCase() !== "y") {
+          console.log("Login cancelled.");
+          return;
+        }
+      }
+
+      const result = await loginManager.login({ noBrowser: !opts.browser });
+      console.log(`\nLogin successful! API token stored in ${result.envFilePath}`);
     } catch (e) {
       handleError(e);
     }

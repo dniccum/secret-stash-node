@@ -6,6 +6,8 @@ export { VariableUtility } from "./support/VariableUtility";
 export { KeyManager } from "./managers/KeyManager";
 export type { KeyInitOptions, KeyStatusResult, KeyInitResult, RecoveryKeyResult } from "./managers/KeyManager";
 
+export { LoginManager } from "./managers/LoginManager";
+
 export { VariablesManager } from "./managers/VariablesManager";
 export type { ListVariablesResult, PullVariablesResult, PushVariablesResult } from "./managers/VariablesManager";
 
