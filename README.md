@@ -15,7 +15,7 @@ The SecretStash CLI for Node.js lets you securely sync environment variables acr
 
 Built for developers who want a fast, secure, CLI-first way to manage secrets without friction.
 
-A Node.js/TypeScript package for interacting with the [SecretStash](https://secretstash.cloud) REST API. This package can be used as a programmatic Node module within a project or installed globally as a CLI tool. It provides full zero-knowledge encryption support for managing your environment variables.
+A Node.js/TypeScript package for interacting with the [SecretStash](https://secretstash.cloud/g) REST API. This package can be used as a programmatic Node module within a project or installed globally as a CLI tool. It provides full zero-knowledge encryption support for managing your environment variables.
 
 ## Requirements
 
@@ -168,7 +168,7 @@ Full documentation available at:
 
 Start using SecretStash today:
 
-👉 https://secretstash.cloud
+👉 [https://secretstash.cloud](https://secretstash.cloud/g)
 
 ---
 
