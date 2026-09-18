@@ -69,7 +69,7 @@ secret-stash pull
 
 The CLI is designed to work with SecretStash Cloud:
 
-👉 https://secretstash.cloud
+👉 [https://secretstash.cloud](https://secretstash.cloud/g)
 
 With the cloud platform, you can:
 
