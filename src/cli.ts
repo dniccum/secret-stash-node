@@ -11,7 +11,7 @@ import { EnvironmentsManager } from "./managers/EnvironmentsManager";
 import { EnvelopeManager } from "./managers/EnvelopeManager";
 import { ApplicationsManager } from "./managers/ApplicationsManager";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const pkg = require(path.join(__dirname, "..", "package.json")) as { version: string };
 
 const program = new Command();
