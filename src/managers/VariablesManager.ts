@@ -28,6 +28,8 @@ export interface PushVariablesResult {
 }
 
 export class VariablesManager {
+  private static readonly REPAIR_TIMEOUT_MS = 10_000;
+
   private readonly keyManager: KeyManager;
   private readonly variableUtility: VariableUtility;
 
@@ -212,7 +214,17 @@ export class VariablesManager {
         throw new Error("Unable to decrypt environment key. Verify your device key or run envelope repair if needed.");
       }
 
-      await this.repairMissingDeviceEnvelopes(applicationId, environmentSlug, deviceKeyId, dek, client);
+      // Bound the opportunistic repair so a hung request can't block the command,
+      // since the client sets no request timeout of its own.
+      let timer: NodeJS.Timeout | undefined;
+      await Promise.race([
+        this.repairMissingDeviceEnvelopes(applicationId, environmentSlug, deviceKeyId, dek, client),
+        new Promise<void>(resolve => {
+          timer = setTimeout(resolve, VariablesManager.REPAIR_TIMEOUT_MS);
+          timer.unref();
+        }),
+      ]);
+      clearTimeout(timer);
 
       return dek;
     }

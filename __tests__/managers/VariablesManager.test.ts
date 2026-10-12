@@ -70,6 +70,9 @@ describe("VariablesManager", () => {
       getUserKeys: jest.fn().mockResolvedValue({
         data: [{ id: 42, public_key: keyPair.publicKey, fingerprint: "fp", key_type: "device" }],
       }),
+      getEnvironmentEnvelopes: jest.fn().mockResolvedValue({
+        data: { device_keys: [{ device_key_id: 42, public_key: keyPair.publicKey, has_envelope: true }] },
+      }),
       storeBulkEnvironmentEnvelopes: jest.fn().mockResolvedValue({}),
       createVariable: jest.fn().mockResolvedValue({ data: {} }),
       createEnvironment: jest.fn().mockResolvedValue({ data: { name: "Local", slug: "local", type: "local" } }),
@@ -90,7 +93,7 @@ describe("VariablesManager", () => {
           { id: 44, public_key: browser.publicKey },
         ],
       });
-      (client as unknown as Record<string, unknown>).getEnvironmentEnvelopes = jest.fn().mockResolvedValue({
+      (client.getEnvironmentEnvelopes as jest.Mock).mockResolvedValue({
         data: {
           device_keys: [
             { device_key_id: 42, public_key: keyPair.publicKey, has_envelope: true },
@@ -111,6 +114,24 @@ describe("VariablesManager", () => {
       expect(envelopes).toHaveLength(1);
       expect(envelopes[0].device_key_id).toBe(43);
       expect(CryptoHelper.openEnvelope(envelopes[0].envelope, browser.privateKey).equals(dek)).toBe(true);
+    });
+
+    it("does not block the command when a repair request hangs", async () => {
+      jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate"] });
+      try {
+        const client = createMockClient([], [
+          { id: "1", name: "DB_HOST", payload: createEncryptedPayload("localhost"), created_at: "2025-01-01" },
+        ]);
+        (client.getUserKeys as jest.Mock).mockReturnValue(new Promise(() => {}));
+
+        const pending = variablesManager.list(client, "app-123", "production");
+        await jest.advanceTimersByTimeAsync(10_000);
+        const result = await pending;
+
+        expect(result.total).toBe(1);
+      } finally {
+        jest.useRealTimers();
+      }
     });
 
     it("still returns variables when repair fails", async () => {
