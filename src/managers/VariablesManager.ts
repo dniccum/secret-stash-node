@@ -205,11 +205,16 @@ export class VariablesManager {
 
     if (envelope) {
       const privateKey = this.keyManager.getPrivateKey();
+      let dek: Buffer;
       try {
-        return CryptoHelper.openEnvelope(envelope, privateKey);
+        dek = CryptoHelper.openEnvelope(envelope, privateKey);
       } catch {
         throw new Error("Unable to decrypt environment key. Verify your device key or run envelope repair if needed.");
       }
+
+      await this.repairMissingDeviceEnvelopes(applicationId, environmentSlug, deviceKeyId, dek, client);
+
+      return dek;
     }
 
     if (!createIfMissing) {
@@ -233,5 +238,41 @@ export class VariablesManager {
     await client.storeBulkEnvironmentEnvelopes(applicationId, environmentSlug, envelopes);
 
     return dek;
+  }
+
+  /**
+   * Wrap the environment key for any of the user's other devices (e.g. a
+   * browser) that are still missing an envelope, so they can unlock the
+   * environment without someone re-sharing access. Best-effort: a failure
+   * here must never block the command that needed the key.
+   */
+  private async repairMissingDeviceEnvelopes(applicationId: string, environmentSlug: string, deviceKeyId: number, dek: Buffer, client: SecretStashClient): Promise<void> {
+    try {
+      const userKeysResponse = await client.getUserKeys();
+      const ownDeviceKeyIds = new Set(((userKeysResponse["data"] as DeviceKeyData[]) ?? []).map(deviceKey => Number(deviceKey.id)));
+
+      const response = await client.getEnvironmentEnvelopes(applicationId, environmentSlug);
+      const data = response["data"] as { device_keys?: Array<{ device_key_id: number; public_key: string; has_envelope?: boolean }> } | undefined;
+
+      const envelopes: Array<{ device_key_id: number; envelope: EnvelopePayload }> = [];
+      for (const deviceKey of data?.device_keys ?? []) {
+        const id = Number(deviceKey.device_key_id);
+        if (id === deviceKeyId || !ownDeviceKeyIds.has(id) || deviceKey.has_envelope !== false) {
+          continue;
+        }
+
+        try {
+          envelopes.push({ device_key_id: id, envelope: CryptoHelper.createEnvelope(dek, deviceKey.public_key) });
+        } catch {
+          // Skip a malformed public key rather than abort repair for the rest.
+        }
+      }
+
+      if (envelopes.length > 0) {
+        await client.storeBulkEnvironmentEnvelopes(applicationId, environmentSlug, envelopes);
+      }
+    } catch {
+      // Repair is opportunistic; the next successful unlock will retry.
+    }
   }
 }

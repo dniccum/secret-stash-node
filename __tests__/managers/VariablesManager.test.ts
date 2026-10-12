@@ -76,6 +76,56 @@ describe("VariablesManager", () => {
     } as unknown as SecretStashClient;
   }
 
+  describe("envelope self-repair", () => {
+    it("wraps the key for the user's other devices that are missing an envelope", async () => {
+      const browser = CryptoHelper.generateRSAKeyPair();
+      const teammate = CryptoHelper.generateRSAKeyPair();
+      const client = createMockClient([], [
+        { id: "1", name: "DB_HOST", payload: createEncryptedPayload("localhost"), created_at: "2025-01-01" },
+      ]);
+      (client.getUserKeys as jest.Mock).mockResolvedValue({
+        data: [
+          { id: 42, public_key: keyPair.publicKey },
+          { id: 43, public_key: browser.publicKey },
+          { id: 44, public_key: browser.publicKey },
+        ],
+      });
+      (client as unknown as Record<string, unknown>).getEnvironmentEnvelopes = jest.fn().mockResolvedValue({
+        data: {
+          device_keys: [
+            { device_key_id: 42, public_key: keyPair.publicKey, has_envelope: true },
+            { device_key_id: 43, public_key: browser.publicKey, has_envelope: false },
+            { device_key_id: 44, public_key: browser.publicKey, has_envelope: true },
+            { device_key_id: 99, public_key: teammate.publicKey, has_envelope: false },
+          ],
+        },
+      });
+
+      const result = await variablesManager.list(client, "app-123", "production");
+
+      expect(result.total).toBe(1);
+      expect(client.storeBulkEnvironmentEnvelopes).toHaveBeenCalledTimes(1);
+      const [appId, slug, envelopes] = (client.storeBulkEnvironmentEnvelopes as jest.Mock).mock.calls[0];
+      expect(appId).toBe("app-123");
+      expect(slug).toBe("production");
+      expect(envelopes).toHaveLength(1);
+      expect(envelopes[0].device_key_id).toBe(43);
+      expect(CryptoHelper.openEnvelope(envelopes[0].envelope, browser.privateKey).equals(dek)).toBe(true);
+    });
+
+    it("still returns variables when repair fails", async () => {
+      const client = createMockClient([], [
+        { id: "1", name: "DB_HOST", payload: createEncryptedPayload("localhost"), created_at: "2025-01-01" },
+      ]);
+      (client.getUserKeys as jest.Mock).mockRejectedValue(new Error("Network error"));
+
+      const result = await variablesManager.list(client, "app-123", "production");
+
+      expect(result.total).toBe(1);
+      expect(client.storeBulkEnvironmentEnvelopes).not.toHaveBeenCalled();
+    });
+  });
+
   describe("list", () => {
     it("should list variables with masked values", async () => {
       const client = createMockClient([], [
