@@ -36,9 +36,9 @@ export class SecretStashClient {
   private httpClient: HttpClient | null = null;
 
   constructor(apiUrl?: string, apiToken?: string, options: SecretStashClientOptions = {}) {
-    this.apiUrl = apiUrl
-      ? apiUrl.replace(/\/+$/, "")
-      : (ConfigResolver.get("api_url") as string) ?? "";
+    this.apiUrl = SecretStashClient.trimTrailingSlashes(
+      apiUrl ? apiUrl : (ConfigResolver.get("api_url") as string) ?? ""
+    );
 
     this.apiToken = apiToken
       ? apiToken
@@ -71,7 +71,16 @@ export class SecretStashClient {
   }
 
   private getBaseUrl(): string {
-    return `${this.apiUrl.replace(/\/+$/, "")}/api/`;
+    return `${this.apiUrl}/api/`;
+  }
+
+  // A loop rather than /\/+$/, which backtracks polynomially on long runs of "/".
+  private static trimTrailingSlashes(url: string): string {
+    let end = url.length;
+    while (end > 0 && url[end - 1] === "/") {
+      end--;
+    }
+    return url.slice(0, end);
   }
 
   private getHeaders(): Record<string, string> {

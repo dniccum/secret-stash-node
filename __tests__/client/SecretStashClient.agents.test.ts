@@ -59,6 +59,14 @@ describe("SecretStashClient Agent Vault", () => {
       expect(calledUrl(mockHttp.get)).toBe("https://api.test.com/api/agents");
     });
 
+    it("trims trailing slashes from the API URL", async () => {
+      const slashed = new SecretStashClient("https://api.test.com///", "test-token");
+      slashed.setHttpClient(mockHttp);
+
+      await slashed.getAgents();
+      expect(calledUrl(mockHttp.get)).toBe("https://api.test.com/api/v1/agents");
+    });
+
     it("keeps existing endpoints on their unversioned paths", async () => {
       await client.getEnvironments("app-123");
       expect(calledUrl(mockHttp.get)).toBe("https://api.test.com/api/applications/app-123/environments");
