@@ -1,4 +1,5 @@
 export { SecretStashClient } from "./client/SecretStashClient";
+export type { ApiVersion, HttpClient, HttpMethod, SecretStashClientOptions } from "./client/SecretStashClient";
 export { CryptoHelper } from "./crypto/CryptoHelper";
 export { ConfigResolver } from "./support/ConfigResolver";
 export { VariableUtility } from "./support/VariableUtility";
@@ -19,6 +20,9 @@ export type { RewrapOptions, ResetResult } from "./managers/EnvelopeManager";
 
 export { ApplicationsManager } from "./managers/ApplicationsManager";
 export type { ListApplicationsResult } from "./managers/ApplicationsManager";
+
+export { AgentsManager } from "./managers/AgentsManager";
+export type { CreateAgentOptions, CreateAgentResult, UpdateAgentResult, ProvisionDekResult } from "./managers/AgentsManager";
 
 export * from "./types";
 export * from "./errors";

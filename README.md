@@ -156,6 +156,48 @@ SecretStash:
 
 ---
 
+## 🤖 Agent Vault (Node.js API)
+
+The package can manage [Agent Vault](https://secretstash.cloud) agents and resolve secrets on their behalf. Agent Vault endpoints use the versioned REST API (`/api/v1/...`).
+
+```ts
+import { AgentsManager, AgentType, SecretStashClient } from "@secret-stash/cli";
+
+const agents = new AgentsManager();
+
+// Manage agents with your user API token.
+const client = new SecretStashClient("https://secretstash.cloud", process.env.SECRET_STASH_API_TOKEN);
+
+const { agent, token } = await agents.create(client, { name: "CI bot", type: AgentType.Custom });
+// `token` is shown only once. Store it somewhere safe.
+
+await agents.syncEnvironments(client, agent.id, ["<environment-uuid>"]);
+
+// Unwrap this device's environment key and provision it for the agent.
+await agents.provisionEnvironmentKey(client, agent.id, "<application-id>", "production");
+
+const diagnostics = await agents.test(client, agent.id);
+
+// Resolve secrets with the agent's own token.
+const agentClient = new SecretStashClient("https://secretstash.cloud", token);
+const dbPassword = await agents.getSecret(agentClient, agent.id, "DB_PASSWORD");
+const secrets = await agents.resolve(agentClient, agent.id, ["API_KEY", "DB_PASSWORD"], "production");
+```
+
+Other methods: `list`, `get`, `update` (pass `status: AgentStatus.Revoked` to revoke; reactivating returns a fresh token), `delete`, `provisionDek` (provision a raw 32-byte key you already hold) and `listSecrets`. The same endpoints are available as lower-level methods on `SecretStashClient` (`getAgents`, `createAgent`, `provisionAgentDek`, `resolveAgentSecrets`, ...).
+
+### API versioning
+
+`SecretStashClient` sends Agent Vault requests to `/api/v1/` by default. To target the unversioned `/api/...` fallback (deprecated by the server), pass `apiVersion: null`:
+
+```ts
+const client = new SecretStashClient(url, token, { apiVersion: null });
+```
+
+Existing endpoints (applications, environments, variables, keys and envelopes) are unversioned on the server and keep their current paths.
+
+---
+
 ## 📚 Documentation
 
 Full documentation available at:

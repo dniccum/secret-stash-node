@@ -1,21 +1,44 @@
 import { ConfigResolver } from "../support/ConfigResolver";
 import { InvalidApiToken, InvalidEnvironmentConfiguration, MissingApiToken } from "../errors";
-import { EnvelopePayload } from "../types";
+import { AgentType, AgentUpdateAttributes, EnvelopePayload } from "../types";
+
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface HttpClient {
   get(url: string, options?: RequestInit): Promise<Response>;
   post(url: string, options?: RequestInit): Promise<Response>;
+  put?(url: string, options?: RequestInit): Promise<Response>;
+  patch?(url: string, options?: RequestInit): Promise<Response>;
+  delete?(url: string, options?: RequestInit): Promise<Response>;
+}
+
+/**
+ * Versions of the SecretStash REST API the client can target.
+ */
+export type ApiVersion = "v1";
+
+export interface SecretStashClientOptions {
+  /**
+   * The API version used for versioned endpoints (the Agent Vault). Defaults
+   * to "v1", which routes requests to `/api/v1/...`. Pass `null` to use the
+   * unversioned `/api/...` fallback that the server serves as its default
+   * version (deprecated server-side, kept for older deployments).
+   */
+  apiVersion?: ApiVersion | null;
 }
 
 export class SecretStashClient {
+  static readonly DEFAULT_API_VERSION: ApiVersion = "v1";
+
   private apiUrl: string;
   private apiToken: string;
+  private apiVersion: ApiVersion | null;
   private httpClient: HttpClient | null = null;
 
-  constructor(apiUrl?: string, apiToken?: string) {
-    this.apiUrl = apiUrl
-      ? apiUrl.replace(/\/+$/, "")
-      : (ConfigResolver.get("api_url") as string) ?? "";
+  constructor(apiUrl?: string, apiToken?: string, options: SecretStashClientOptions = {}) {
+    this.apiUrl = SecretStashClient.trimTrailingSlashes(
+      apiUrl ? apiUrl : (ConfigResolver.get("api_url") as string) ?? ""
+    );
 
     this.apiToken = apiToken
       ? apiToken
@@ -32,6 +55,14 @@ export class SecretStashClient {
         "API token is not configured. Please set SECRET_STASH_API_TOKEN in your .env file."
       );
     }
+
+    this.apiVersion = options.apiVersion === undefined
+      ? SecretStashClient.DEFAULT_API_VERSION
+      : options.apiVersion;
+  }
+
+  getApiVersion(): ApiVersion | null {
+    return this.apiVersion;
   }
 
   setHttpClient(client: HttpClient): this {
@@ -40,7 +71,16 @@ export class SecretStashClient {
   }
 
   private getBaseUrl(): string {
-    return `${this.apiUrl.replace(/\/+$/, "")}/api/`;
+    return `${this.apiUrl}/api/`;
+  }
+
+  // A loop rather than /\/+$/, which backtracks polynomially on long runs of "/".
+  private static trimTrailingSlashes(url: string): string {
+    let end = url.length;
+    while (end > 0 && url[end - 1] === "/") {
+      end--;
+    }
+    return url.slice(0, end);
   }
 
   private getHeaders(): Record<string, string> {
@@ -57,25 +97,49 @@ export class SecretStashClient {
   }
 
   async get(endpoint: string, query: Record<string, string | number> = {}): Promise<Record<string, unknown>> {
+    return this.send("GET", endpoint, { query });
+  }
+
+  async post(endpoint: string, data: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+    return this.send("POST", endpoint, { data });
+  }
+
+  async put(endpoint: string, data: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+    return this.send("PUT", endpoint, { data });
+  }
+
+  async patch(endpoint: string, data: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+    return this.send("PATCH", endpoint, { data });
+  }
+
+  async delete(endpoint: string): Promise<Record<string, unknown>> {
+    return this.send("DELETE", endpoint);
+  }
+
+  private async send(
+    method: HttpMethod,
+    endpoint: string,
+    { query = {}, data }: { query?: Record<string, string | number>; data?: Record<string, unknown> } = {}
+  ): Promise<Record<string, unknown>> {
     try {
       const url = new URL(endpoint, this.getBaseUrl());
       for (const [key, value] of Object.entries(query)) {
         url.searchParams.set(key, String(value));
       }
 
-      const client = this.httpClient;
-      let response: Response;
-      if (client) {
-        response = await client.get(url.toString(), { headers: this.getHeaders() });
-      } else {
-        response = await fetch(url.toString(), {
-          method: "GET",
-          headers: this.getHeaders(),
-        });
+      const options: RequestInit = { headers: this.getHeaders() };
+      if (data !== undefined) {
+        options.body = JSON.stringify(data);
       }
+
+      const response = await this.dispatch(method, url.toString(), options);
 
       if (!response.ok) {
         await this.handleErrorResponse(response);
+      }
+
+      if (response.status === 204) {
+        return {};
       }
 
       const body = await response.json();
@@ -85,34 +149,33 @@ export class SecretStashClient {
     }
   }
 
-  async post(endpoint: string, data: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
-    try {
-      const url = new URL(endpoint, this.getBaseUrl());
-
-      const client = this.httpClient;
-      let response: Response;
-      if (client) {
-        response = await client.post(url.toString(), {
-          headers: this.getHeaders(),
-          body: JSON.stringify(data),
-        });
-      } else {
-        response = await fetch(url.toString(), {
-          method: "POST",
-          headers: this.getHeaders(),
-          body: JSON.stringify(data),
-        });
-      }
-
-      if (!response.ok) {
-        await this.handleErrorResponse(response);
-      }
-
-      const body = await response.json();
-      return typeof body === "object" && body !== null ? body as Record<string, unknown> : {};
-    } catch (e) {
-      this.handleException(e);
+  private async dispatch(method: HttpMethod, url: string, options: RequestInit): Promise<Response> {
+    const client = this.httpClient;
+    if (!client) {
+      return fetch(url, { ...options, method });
     }
+
+    const handler = {
+      GET: client.get,
+      POST: client.post,
+      PUT: client.put,
+      PATCH: client.patch,
+      DELETE: client.delete,
+    }[method];
+
+    if (!handler) {
+      throw new Error(`The configured HTTP client does not support ${method} requests.`);
+    }
+
+    return handler.call(client, url, options);
+  }
+
+  /**
+   * Prefix an endpoint with the configured API version, e.g. `agents` becomes
+   * `v1/agents`. With no version configured the unversioned fallback is used.
+   */
+  private versioned(endpoint: string): string {
+    return this.apiVersion ? `${this.apiVersion}/${endpoint}` : endpoint;
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {
@@ -228,5 +291,70 @@ export class SecretStashClient {
     return this.post(`applications/${applicationId}/environments/${environmentSlug}/envelopes`, {
       envelopes,
     });
+  }
+
+  // Agent Vault: management endpoints (authenticated with a user API token)
+
+  async getAgents(): Promise<Record<string, unknown>> {
+    return this.get(this.versioned("agents"));
+  }
+
+  async getAgent(agentId: string): Promise<Record<string, unknown>> {
+    return this.get(this.versioned(`agents/${encodeURIComponent(agentId)}`));
+  }
+
+  async createAgent(name: string, type: AgentType, description?: string | null): Promise<Record<string, unknown>> {
+    return this.post(this.versioned("agents"), {
+      name,
+      type,
+      description: description ?? null,
+    });
+  }
+
+  async updateAgent(agentId: string, attributes: AgentUpdateAttributes): Promise<Record<string, unknown>> {
+    return this.patch(this.versioned(`agents/${encodeURIComponent(agentId)}`), { ...attributes });
+  }
+
+  async deleteAgent(agentId: string): Promise<Record<string, unknown>> {
+    return this.delete(this.versioned(`agents/${encodeURIComponent(agentId)}`));
+  }
+
+  async syncAgentEnvironments(agentId: string, environmentIds: string[]): Promise<Record<string, unknown>> {
+    return this.post(this.versioned(`agents/${encodeURIComponent(agentId)}/environments`), {
+      environment_ids: environmentIds,
+    });
+  }
+
+  async provisionAgentDek(agentId: string, environmentId: string, dek: string): Promise<Record<string, unknown>> {
+    return this.put(
+      this.versioned(`agents/${encodeURIComponent(agentId)}/environments/${encodeURIComponent(environmentId)}/dek`),
+      { dek }
+    );
+  }
+
+  async testAgent(agentId: string): Promise<Record<string, unknown>> {
+    return this.post(this.versioned(`agents/${encodeURIComponent(agentId)}/test`));
+  }
+
+  // Agent Vault: secret resolution endpoints (authenticated with the agent's own token)
+
+  async getAgentSecrets(agentId: string): Promise<Record<string, unknown>> {
+    return this.get(this.versioned(`agents/${encodeURIComponent(agentId)}/secrets`));
+  }
+
+  async getAgentSecret(agentId: string, name: string, environment?: string): Promise<Record<string, unknown>> {
+    return this.get(
+      this.versioned(`agents/${encodeURIComponent(agentId)}/secrets/${encodeURIComponent(name)}`),
+      environment ? { environment } : {}
+    );
+  }
+
+  async resolveAgentSecrets(agentId: string, variables: string[], environment?: string): Promise<Record<string, unknown>> {
+    const data: Record<string, unknown> = { variables };
+    if (environment) {
+      data["environment"] = environment;
+    }
+
+    return this.post(this.versioned(`agents/${encodeURIComponent(agentId)}/secrets/resolve`), data);
   }
 }
