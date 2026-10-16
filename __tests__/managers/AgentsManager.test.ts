@@ -199,6 +199,11 @@ describe("AgentsManager", () => {
       await expect(manager.getSecret(client, "agent-1", "DB_PASSWORD")).rejects.toThrow("The secret \"DB_PASSWORD\" was not returned.");
     });
 
+    it("does not treat inherited properties as returned secrets", async () => {
+      const client = mockClient({ getAgentSecret: { data: {} } });
+      await expect(manager.getSecret(client, "agent-1", "toString")).rejects.toThrow("The secret \"toString\" was not returned.");
+    });
+
     it("resolves a batch", async () => {
       const client = mockClient({ resolveAgentSecrets: { data: { A: "1", B: null } } });
       expect(await manager.resolve(client, "agent-1", ["A", "B"])).toEqual({ A: "1", B: null });

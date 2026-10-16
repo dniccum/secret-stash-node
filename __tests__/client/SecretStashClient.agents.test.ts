@@ -102,6 +102,11 @@ describe("SecretStashClient Agent Vault", () => {
       expect((mockHttp.delete.mock.calls[0] as unknown[])[1]).not.toHaveProperty("body");
     });
 
+    it("treats a 204 No Content response as an empty result", async () => {
+      client.setHttpClient(createMockHttpClient(undefined, 204));
+      await expect(client.deleteAgent("agent-1")).resolves.toEqual({});
+    });
+
     it("syncs agent environments", async () => {
       await client.syncAgentEnvironments("agent-1", ["env-1", "env-2"]);
       expect(calledUrl(mockHttp.post)).toBe("https://api.test.com/api/v1/agents/agent-1/environments");

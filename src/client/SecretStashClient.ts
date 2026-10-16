@@ -138,6 +138,10 @@ export class SecretStashClient {
         await this.handleErrorResponse(response);
       }
 
+      if (response.status === 204) {
+        return {};
+      }
+
       const body = await response.json();
       return typeof body === "object" && body !== null ? body as Record<string, unknown> : {};
     } catch (e) {

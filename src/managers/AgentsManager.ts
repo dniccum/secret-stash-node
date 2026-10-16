@@ -205,7 +205,7 @@ export class AgentsManager {
     const response = await agentClient.getAgentSecret(agentId, name, environment);
     const data = (response["data"] as Record<string, string> | undefined) ?? {};
 
-    if (!(name in data)) {
+    if (!Object.prototype.hasOwnProperty.call(data, name)) {
       throw new Error(`The secret "${name}" was not returned.`);
     }
 
