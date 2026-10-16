@@ -1,7 +1,22 @@
 {
   "name": "@secret-stash/cli",
   "version": "0.1.0",
-  "description": "A Node.js package for interacting with the SecretStash REST API.",
+  "description": "Sync zero-knowledge encrypted .env variables across your team from the command line or Node.js, using the SecretStash secrets manager.",
+  "keywords": [
+    "secret-stash",
+    "secretstash",
+    "env",
+    "dotenv",
+    "environment-variables",
+    "secrets",
+    "secrets-management",
+    "encryption",
+    "cli"
+  ],
+  "homepage": "https://secretstash.cloud",
+  "bugs": {
+    "url": "https://github.com/dniccum/secret-stash-node/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
