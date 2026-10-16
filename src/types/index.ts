@@ -52,3 +52,17 @@ export interface VariableData {
   payload: Record<string, unknown> | null;
   created_at: string;
 }
+
+export {
+  AgentType,
+  AgentStatus,
+  AgentTestStatus,
+} from "./Agent";
+export type {
+  AgentData,
+  AgentEnvironmentData,
+  AgentUpdateAttributes,
+  AgentSecretsEnvironment,
+  AgentDiagnosticCheck,
+  AgentTestResult,
+} from "./Agent";
